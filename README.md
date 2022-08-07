@@ -37,4 +37,4 @@ Functionalities:
 The program is written in such way that it's virtually impossible for a user to cause an error.
 The user is being asked for an input that can be accounted for as long as necessary.
 
-<iframe src="https://giphy.com/embed/VQzOTg8Gn778PIiPwu" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/VQzOTg8Gn778PIiPwu">via GIPHY</a></p>
+![Alt Text]("https://giphy.com/embed/VQzOTg8Gn778PIiPwu")
