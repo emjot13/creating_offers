@@ -26,12 +26,12 @@ Functionalities:
             - deleting products from offer
             - adding products to offer
             - changing the discount of products
-        For each of above possibilites user again can choose any of three ways for looking for products.
+        For each of above possibilites the user again can choose any of three ways for looking for products.
 
     - adding the version to the filename if the input filename already exists:
-      If user creates offer with name "batteries", then if they want to create the file with the same name
-      There will be added _X at the end of the filename, where X is the lowest number such that there isn't filename
-      With that version number.
+      If user creates an offer with the name "batteries", then if they want to create the file with the same name
+      There will be added _X at the end of the filename, where X is the lowest number such that 
+      There isn't a filename with that version number.
 
-The program is written in such way that it's virtually impossible for user to cause an error.
-User is being asked for input that can be accounted for as long as necessary.
+The program is written in such way that it's virtually impossible for a user to cause an error.
+The user is being asked for an input that can be accounted for as long as necessary.
