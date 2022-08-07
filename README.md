@@ -29,8 +29,9 @@ Functionalities:
         For each of above possibilites the user again can choose any of three ways for looking for products.
 
     - adding the version to the filename if the input filename already exists:
-      If user creates an offer with the name "batteries", then if they want to create the file with the same name
-      There will be added _X at the end of the filename, where X is the lowest number such that 
+      User creates an offer with the name "batteries"
+      Then if they want to create the file with the same name
+      There will be added "_X" at the end of the filename, where X is the lowest number such that 
       There isn't a filename with that version number.
 
 The program is written in such way that it's virtually impossible for a user to cause an error.
