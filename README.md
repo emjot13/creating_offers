@@ -37,6 +37,9 @@ Functionalities:
 The program is written in such way that it's virtually impossible for a user to cause an error.
 The user is being asked for an input that can be accounted for as long as necessary.
 
+Below you can see how part of the offer looks like, flashing red background occurs when this product is not available at the moment 
+And that's also what added caption "CHWILOWO NIEDOSTĘPNE" means in Polish.
+</br>
 
 <p align="center">
   <img width="460" height="300" src="https://media.giphy.com/media/VQzOTg8Gn778PIiPwu/giphy.gif">
