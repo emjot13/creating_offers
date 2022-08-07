@@ -34,7 +34,7 @@ Functionalities:
       There will be added "_X" at the end of the filename, where X is the lowest number such that 
       There isn't a filename with that version number.
 
-The program is written in such way that it's virtually impossible for a user to cause an error.
+The program is written in such way that it's virtually impossible for a user to cause an error. </br>
 The user is being asked for an input that can be accounted for as long as necessary.
 
 Below you can see how part of the offer looks like, flashing red background occurs when this product is not available at the moment </br>
