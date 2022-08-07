@@ -1,12 +1,12 @@
 This program makes creating offers from excel files easy.
 
-One day my dad came to me and said that he needs to send an offer to one of his clients.
-He didn't want to just send them an excel file as it wouldn't look professional.
-So I told him that I can write some simple code to make such offers.
+One day my dad came to me and said that he needs to send an offer to one of his clients.</br>
+He didn't want to just send them an excel file as it wouldn't look professional.</br>
+So I told him that I can write some simple code to make such offers.</br>
 
-The program is supposed to work with specific structure of excel files, that the company my dad works with, is using.
-The layout is: name, amount of product left, unit in which item is sold, price.
-Such layout is neccessary for program to work without any changes (names of the columns are irrelevant).
+The program is supposed to work with specific structure of excel files, that the company my dad works with, is using.</br>
+The layout is: name, amount of product left, unit in which item is sold, price.</br>
+Such layout is neccessary for program to work without any changes (names of the columns are irrelevant).</br>
 
 Functionalities:
 
