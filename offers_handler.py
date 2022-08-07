@@ -3,7 +3,6 @@ import itertools
 import pandas as pd
 
 
-
 def start() -> None:
     """
     Start of the program
@@ -23,10 +22,24 @@ def start() -> None:
         change_offer()
 
 
+def read_from_html_file(filename: str) -> tuple[list[str], list[str], list[str]]:
+    with open(filename, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+        file_start = list(itertools.takewhile(lambda x: "<tbody>" not in x, lines)) + ["<tbody>"]
+        # returns lines before <tbody> (exclusive)
+        file_end = list(itertools.dropwhile(lambda x: "</tbody>" not in x, lines))
+        # returns lines after </tbody> (inclusive)
+        table_contents = [x + "</tr>" for x in "".join(lines[len(file_start):-len(file_end)]).split("</tr>")][:-1]
+        # returns contents of the html table and splits into rows - [:-1] is used so there is no additional </tr> at the end
+    return file_start, table_contents, file_end
+
+
+
 def get_html_source_filename() -> str:
     while True:
-        filename = input("""Wklej ścieżkę do pliku z ofertą, którą chcesz zmodyfikować
-        Lub samą nazwę pliku jeśli program i plik są w tym samym folderze\n""")
+        INPUT_MSG = ("Wklej ścieżkę do pliku z ofertą, którą chcesz zmodyfikować\n"
+                    "Lub samą nazwę pliku jeśli program i plik są w tym samym folderze\n")
+        filename = input(INPUT_MSG)
 
         if exists(filename) and filename.endswith(".html"):
             break
@@ -37,26 +50,16 @@ def get_html_source_filename() -> str:
 
     return filename
 
-def get_input_with_limited_options(input_message: str, *, options: list[str]) -> str: 
-    # using star operator so that options argument is a keyword argument 
+
+def get_input_with_limited_options(input_message: str, *, options: list[str]) -> str:
+    # using star operator so that options argument is a keyword argument
     while True:
         user_input = input(input_message).lower()
         if user_input in [option.lower() for option in options]:
             break
-        
+
     return user_input
 
-
-def read_from_html_file(filename: str) -> tuple[list[str], list[str], list[str]]:
-    with open(filename, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
-        file_start = list(itertools.takewhile(lambda x: "<tbody>" not in x, lines)) + ["<tbody>"] 
-        # returns lines before <tbody> (exclusive)
-        file_end = list(itertools.dropwhile(lambda x: "</tbody>" not in x, lines)) 
-        # returns lines after </tbody> (inclusive)
-        table_contents = [x + "</tr>" for x in "".join(lines[len(file_start):-len(file_end)]).split("</tr>")][:-1]
-        # returns contents of the html table and splits into rows - [:-1] is used so there is no additional </tr> at the end
-    return file_start, table_contents, file_end
 
 
 def delete_items_by_ordinal_number(content: list[str]) -> list[str]:
@@ -156,7 +159,6 @@ def change_offer() -> None:
         change_discount()
 
 
-
 def change_discount() -> None:
     excel_file = get_excel_source_filename()
     html_file = get_html_source_filename()
@@ -170,10 +172,10 @@ def change_discount() -> None:
         for index, item in enumerate(table_contents):
             item_name = item.split("<td", maxsplit=1)[1].split(">", maxsplit=1)[1].split("<", maxsplit=1)[0]
             if item_name == new_item_name:
-                item_price = item.rsplit("</td>", maxsplit = 1)[0].rsplit(">", maxsplit = 1)[1]
+                item_price = item.rsplit("</td>", maxsplit=1)[0].rsplit(">", maxsplit=1)[1]
                 # split from right as price is at the end of table row structure
                 table_contents[index] = item.replace(f"{item_price}", new_item[2])
-                break  
+                break
 
     with open(html_file, 'w', encoding='utf-8') as f:
         for line in file_start:
@@ -182,8 +184,6 @@ def change_discount() -> None:
             f.write(line)
         for line in file_end:
             f.write(line)
-
-
 
 
 def check_for_duplicates_and_write_to_file(new_items: list[list[str]]) -> None:
@@ -221,8 +221,9 @@ def add_to_offer() -> None:
 
 def get_excel_source_filename() -> str:
     while True:
-        source_filename = input("""Wklej ścieżkę do pliku excelowego, z którego chcesz wziąć dane
-        Lub samą nazwę pliku, jeśli plik jest w tym samym folderze co program\n""")
+        INPUT_MSG = ("Wklej ścieżkę do pliku excelowego, z którego chcesz wziąć dane\n"
+                    "Lub samą nazwę pliku, jeśli plik jest w tym samym folderze co program.\n")
+        source_filename = input(INPUT_MSG)
         if exists(source_filename):
             break
         if exists(source_filename + ".xls"):
@@ -283,7 +284,7 @@ def keywords_searching_discounts() -> tuple[list[str], list[str], list[float]]:
 
         searching = get_input_with_limited_options(INPUT_STRING, options=["c", "p", "o", "stop"]).lower()
         if searching == "stop":
-            break  
+            break
         searching_list.append(searching)
         keyword = input("Podaj słowo kluczowe do znalezienia produktów\n")
         keywords.append(keyword)
@@ -304,8 +305,7 @@ def get_discount_input() -> float:
             print("Rabat musi być liczbą")
 
 
-
-def items_list(excel_file: str, keywords: list[str], discounts: list[float], searching_list: list[str]) ->list[list[str]]:
+def items_list(excel_file: str, keywords: list[str], discounts: list[float], searching_list: list[str]) -> list[list[str]]:
     items = []
     df = pd.read_excel(excel_file)
     columns = df.columns
@@ -373,7 +373,7 @@ def generate_table_contents(lines, counter=1) -> list[str]:
         if "CHWILOWO NIEDOSTĘPNE" in item[0]:
             # adding style
             table_row_string += ('<td style=" animation-duration: 5s; animation-name:alert;'
-                                f' animation-iteration-count: infinite;">{item[0]}</td>\n')
+                                 f' animation-iteration-count: infinite;">{item[0]}</td>\n')
         else:
             table_row_string += f"<td>{item[0]}</td>\n"
         table_row_string += f"<td>{item[1]}</td>\n"
