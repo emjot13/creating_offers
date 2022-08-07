@@ -37,4 +37,4 @@ Functionalities:
 The program is written in such way that it's virtually impossible for a user to cause an error.
 The user is being asked for an input that can be accounted for as long as necessary.
 
-![Alt Text]("https://giphy.com/embed/VQzOTg8Gn778PIiPwu")
+![Alt Text](https://giphy.com/embed/VQzOTg8Gn778PIiPwu)
