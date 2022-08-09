@@ -256,13 +256,11 @@ def check_for_duplicates_and_write_to_file(new_items: list[list[str]]) -> None:
     new_items_list = []
     for new_item in new_items:
         new_item_name = new_item[0].split("<br/>")[0]
-        is_copy = False
         for old_item in previous_content:
             old_item_name = old_item.split("<td", maxsplit=1)[1].split(">", maxsplit=1)[1].split("<", maxsplit=1)[0]
             if old_item_name == new_item_name:
-                is_copy = True
                 break
-        if not is_copy:
+        else:
             new_items_list.append(new_item)
 
     all_items_list = previous_content + generate_table_contents(new_items_list, counter=len(previous_content) + 1)
@@ -333,7 +331,7 @@ def keywords_searching_discounts() -> tuple[list[str], list[str], list[float]]:
         if searching == "stop":
             break
         searching_list.append(searching)
-        keyword = input("Podaj słowo kluczowe do znalezienia produktów\n")
+        keyword = input("Podaj słowo kluczowe do znalezienia produktów\n").lower()
         keywords.append(keyword)
         discount = get_discount_input()
         discounts.append(discount)
@@ -359,7 +357,6 @@ def items_list(excel_file: str, keywords: list[str], discounts: list[float], sea
     for name, amount_left, unit, price in zip(df[columns[0]], df[columns[1]], df[columns[2]], df[columns[3]]):
         amount_left = int(amount_left)
         for keyword, way_of_searching, discount in zip(keywords, searching, discounts):
-            keyword = keyword.lower()
             name = name.replace(",", '.')
             if add_item(way_of_searching, keyword, name):
                 if amount_left == 0:
