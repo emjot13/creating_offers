@@ -75,6 +75,12 @@ PRINT_STYLES = {
     "BOLD": '\033[1m'
 }
 
+ACTIONS = {
+    "1": create_new_offer,
+    "2": change_offer
+}
+# here can be added actions as function names
+
 
 def start() -> None:
     """
@@ -82,11 +88,7 @@ def start() -> None:
     Asking user whether they want to create a new offer or modify an exisiting one
     """
     action = limited_options_input(INPUT_MESSAGES["START"], options=["1", "2"])
-    if action == "1":
-        create_new_offer()
-
-    elif action == "2":
-        change_offer()
+    ACTIONS[action]()
 
 
 def create_new_offer() -> None:
@@ -136,19 +138,23 @@ def limited_options_input(input_message: str, *, options: list[str]) -> str:
         if user_input in [option.lower() for option in options]:
             return user_input
 
+def ask_for_input_in_loop(message: str, stop_word = "stop": str) -> list[str]:
+    inputs = []
+    while True:
+        user_input = input(message).lower()
+        if user_input == stop_word:
+            return inputs
+        inputs.append(user_input)
 
 def delete_items_by_ordinal_number(content: list[str]) -> list[str]:
     """
     User is asked for ordinal numbers of items from the table and then they are deleted
     I mean numbers not users :D
     """
-    ordinal_numbers_list, lines_to_write = [], []
+    lines_to_write = []
     lines_counter, deleted_items_counter = 1, 0
-    while True:
-        ordinal_number = input("Podaj numer pozycji jaką chcesz usunąć, wpisz 'stop' żeby przestać edytować\n").lower()
-        if ordinal_number == "stop":
-            break
-        ordinal_numbers_list.append(ordinal_number)
+    
+    ordinal_numbers_list = ask_for_input_in_loop("Podaj numer pozycji jaką chcesz usunąć, wpisz 'stop' żeby przestać edytować\n")
 
     for line in content:
         line_number = line.split("<th>")[1].split("</th")[0]
@@ -167,13 +173,10 @@ def delete_items_by_ordinal_number(content: list[str]) -> list[str]:
 
 
 def delete_items_by_part_of_name(content: list[str], edit_type: str) -> list[str]:
-    keywords, lines_to_write = [], []
+    lines_to_write = [], []
     lines_counter, deleted_items_counter = 1, 0
-    while True:
-        keyword = input("Podaj słowo kluczowe, wpisz 'stop' żeby przestać edytować\n").lower()
-        if keyword == "stop":
-            break
-        keywords.append(keyword)
+    keywords = ask_for_input_in_loop("Podaj słowo kluczowe, wpisz 'stop' żeby przestać edytować\n")
+
 
     for line in content:
         item_name = line.split("<td", maxsplit=1)[1].split(">", maxsplit=1)[1].split("<", maxsplit=1)[0].lower()
@@ -240,14 +243,12 @@ def change_discount() -> None:
                 # split from right as price is at the end of table row structure
                 table_contents[index] = item.replace(f"{item_price}", new_item_price)
                 break
+    file_contents = file_start + table_contents + file_end
 
     with open(html_file, 'w', encoding='utf-8') as f:
-        for line in file_start:
+        for line in file_contents:
             f.write(line)
-        for line in table_contents:
-            f.write(line)
-        for line in file_end:
-            f.write(line)
+
 
 
 def check_for_duplicates_and_write_to_file(new_items: list[list[str]]) -> None:
@@ -265,12 +266,10 @@ def check_for_duplicates_and_write_to_file(new_items: list[list[str]]) -> None:
 
     all_items_list = previous_content + generate_table_contents(new_items_list, counter=len(previous_content) + 1)
 
+    file_contents = file_start + all_items_list + file_end
+
     with open(html_source_file, 'w', encoding='utf-8') as f:
-        for line in file_start:
-            f.write(line)
-        for line in all_items_list:
-            f.write(line)
-        for line in file_end:
+        for line in file_contents:
             f.write(line)
 
 
