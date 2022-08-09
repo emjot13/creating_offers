@@ -1,6 +1,66 @@
+from __future__ import annotations
+# enables using built-in type annotations rather than those from Typing module - added in python 3.9
+
 from os.path import exists
 import itertools
 import pandas as pd
+
+INPUT_MESSAGES = {
+    "START": ("Wpisz '1' jeśli chcesz stworzyć nową ofertę\n"
+              "Wpisz '2' jeśli chcesz zmodyfikować istniejącą ofertę\n"),
+
+    "GET_HTML_PATH": ("Wklej ścieżkę do pliku z ofertą, którą chcesz zmodyfikować\n"
+                      "Lub samą nazwę pliku jeśli program i plik są w tym samym folderze\n"),
+
+    "DELETING_OPTIONS": ("Wpisz '1' jeśli chcesz usunąć pozycje według liczby\n"
+                         "Wpisz '2' jeśli chcesz usunąć pozycje według początku nazwy\n"
+                         "Wpisz '3' jeśli chcesz usunąć pozycje według części całej nazwy\n"),
+
+    "CHANGE_OPTIONS": ("Wpisz '1' jeśli chcesz usunąć pozycje\n"
+                       "Wpisz '2' jeśli chcesz dodać pozycje\n"
+                       "Wpisz '3' jeśli chcesz zmienić rabat\n"),
+
+    "GET_EXCEL_PATH": ("Wklej ścieżkę do pliku excelowego, z którego chcesz wziąć dane\n"
+                       "Lub samą nazwę pliku, jeśli plik jest w tym samym folderze co program.\n"),
+
+    "KEYWORD_MATCH_TYPE": ("\nPodaj czy słowo kluczowe ma być szukane na początku nazwy produktu,"
+                           " w całej nazwie, czy jako osobne słowo zawarte w nazwie\n"
+                           "Lub wpisz stop żeby zakończyć dodawanie produktów\n"
+                           "Początek -> Wpisz 'P'\n"
+                           "Cała nazwa -> Wpisz 'C'\n"
+                           "Osobne słowo -> Wpisz 'O'\n"
+                           "Zakończ dodawanie produktów -> 'stop'\n")
+
+}
+
+HTML_FILE_STRUCTURE = {
+    "MAIN_STYLE": ("<style> * {font-size: 1.1em;}"
+                   "body {background-color: rgb(155, 155, 101);}"
+                   "table {margin-left: auto;margin-right: auto;border-color: black;border-spacing: 5px;}"
+                   "tr {text-align: center !important;padding: 15px;}"
+                   "th {padding: 15px;border: 3px solid black;margin: 10px 50px;}"
+                   "td {border: 3px solid black;padding: 15px 50px;margin: 10px 50px;}"
+                   "@keyframes alert {from {background-color: rgb(155, 155, 101);}to {background-color: red;}}"
+                   "</style>\n"),
+
+    "TABLE_HEAD": ("<table>\n"
+                   "<thead>\n"
+                   '<tr style="text-align: right;">'
+                   "<th></th>\n"
+                   "<th>Nazwa</th>\n"
+                   "<th>Sprzedawane w:</th>\n"
+                   "<th>Cena</th>\n"
+                   "</tr>\n"
+                   "</thead>\n"
+                   "<tbody>\n\n"),
+
+    "FILE_END": ("</tbody>\n"
+                 "</table>")
+}
+
+VALID_EXCEL_EXTENSIONS = [".xls", ".xlsx"]
+ILLEGAL_CHARS = ['<', '>', ':', '"', '/', '\\', '|', '?', '*', '.']
+
 
 
 def start() -> None:
@@ -8,18 +68,18 @@ def start() -> None:
     Start of the program
     Asking user whether they want to create a new offer or modify an exisiting one
     """
-
-    INPUT_MSG = ("Wpisz '1' jeśli chcesz stworzyć nową ofertę\n"
-                 "Wpisz '2' jeśli chcesz zmodyfikować istniejącą ofertę\n")
-
-    action = get_input_with_limited_options(INPUT_MSG, options=["1", "2"])
+    action = limited_options_input(INPUT_MESSAGES["START"], options=["1", "2"])
     if action == "1":
-        excel_file = get_excel_source_filename()
-        keywords, searching_list, discounts = keywords_searching_discounts()
-        generate_offer_in_html(excel_file, keywords, discounts, searching_list)
+        create_new_offer()
 
     elif action == "2":
         change_offer()
+
+
+def create_new_offer() -> None:
+    excel_file = get_excel_source_filename()
+    keywords, searching_list, discounts = keywords_searching_discounts()
+    generate_offer_in_html(excel_file, keywords, discounts, searching_list)
 
 
 def read_from_html_file(filename: str) -> tuple[list[str], list[str], list[str]]:
@@ -30,17 +90,14 @@ def read_from_html_file(filename: str) -> tuple[list[str], list[str], list[str]]
         file_end = list(itertools.dropwhile(lambda x: "</tbody>" not in x, lines))
         # returns lines after </tbody> (inclusive)
         table_contents = [x + "</tr>" for x in "".join(lines[len(file_start):-len(file_end)]).split("</tr>")][:-1]
-        # returns contents of the html table and splits into rows - [:-1] is used so there is no additional </tr> at the end
+        # returns contents of the html table and splits into rows - [:-1] is used
+        # so there is no additional </tr> at the end
     return file_start, table_contents, file_end
-
 
 
 def get_html_source_filename() -> str:
     while True:
-        INPUT_MSG = ("Wklej ścieżkę do pliku z ofertą, którą chcesz zmodyfikować\n"
-                    "Lub samą nazwę pliku jeśli program i plik są w tym samym folderze\n")
-        filename = input(INPUT_MSG)
-
+        filename = input(INPUT_MESSAGES["GET_HTML_PATH"])
         if exists(filename) and filename.endswith(".html"):
             break
         if exists(filename + ".html"):
@@ -51,28 +108,26 @@ def get_html_source_filename() -> str:
     return filename
 
 
-def get_input_with_limited_options(input_message: str, *, options: list[str]) -> str:
+def limited_options_input(input_message: str, *, options: list[str]) -> str:
     # using star operator so that options argument is a keyword argument
     while True:
         user_input = input(input_message).lower()
         if user_input in [option.lower() for option in options]:
-            break
-
-    return user_input
-
+            return user_input
 
 
 def delete_items_by_ordinal_number(content: list[str]) -> list[str]:
     """
-    User is asked for ordinal numbers of items from the table and then they are deleted 
+    User is asked for ordinal numbers of items from the table and then they are deleted
+    I mean numbers not users :D
     """
     ordinal_numbers_list, lines_to_write = [], []
     lines_counter, deleted_items_counter = 1, 0
     while True:
-        ordinal_number_to_delete = input("Podaj numer pozycji jaką chcesz usunąć, wpisz 'stop' żeby przestać edytować\n").lower()
-        if ordinal_number_to_delete == "stop":
+        ordinal_number = input("Podaj numer pozycji jaką chcesz usunąć, wpisz 'stop' żeby przestać edytować\n").lower()
+        if ordinal_number == "stop":
             break
-        ordinal_numbers_list.append(ordinal_number_to_delete)
+        ordinal_numbers_list.append(ordinal_number)
 
     for line in content:
         to_be_removed = False
@@ -106,7 +161,6 @@ def delete_items_by_part_of_name(content: list[str], edit_type: str) -> list[str
         for keyword in keywords:
             edit_type_2_condition = item_name.startswith(keyword) and edit_type == "2"
             edit_type_3_condition = keyword in item_name and edit_type == "3"
-
             if edit_type_2_condition or edit_type_3_condition:
                 to_be_removed = True
                 deleted_items_counter += 1
@@ -123,11 +177,8 @@ def delete_items_by_part_of_name(content: list[str], edit_type: str) -> list[str
 
 def delete_from_offer() -> None:
     file = get_html_source_filename()
-    INPUT_MSG = ("Wpisz '1' jeśli chcesz usunąć pozycje według liczby\n"
-                 "Wpisz '2' jeśli chcesz usunąć pozycje według początku nazwy\n"
-                 "Wpisz '3' jeśli chcesz usunąć pozycje według części całej nazwy\n")
 
-    edit_type = get_input_with_limited_options(INPUT_MSG, options=["1", "2", "3"])
+    edit_type = limited_options_input(INPUT_MESSAGES["DELETING_OPTIONS"], options=["1", "2", "3"])
     file_start, table_contents, file_end = read_from_html_file(file)
 
     if edit_type == '1':
@@ -143,11 +194,7 @@ def delete_from_offer() -> None:
 
 
 def change_offer() -> None:
-    INPUT_MSG = ("Wpisz '1' jeśli chcesz usunąć pozycje\n"
-                 "Wpisz '2' jeśli chcesz dodać pozycje\n"
-                 "Wpisz '3' jeśli chcesz zmienić rabat\n")
-
-    action = get_input_with_limited_options(INPUT_MSG, options=["1", "2", "3"])
+    action = limited_options_input(INPUT_MESSAGES["CHANGE_OPTIONS"], options=["1", "2", "3"])
 
     if action == "1":
         delete_from_offer()
@@ -221,19 +268,16 @@ def add_to_offer() -> None:
 
 def get_excel_source_filename() -> str:
     while True:
-        INPUT_MSG = ("Wklej ścieżkę do pliku excelowego, z którego chcesz wziąć dane\n"
-                    "Lub samą nazwę pliku, jeśli plik jest w tym samym folderze co program.\n")
-        source_filename = input(INPUT_MSG)
+        source_filename = input(INPUT_MESSAGES["GET_EXCEL_PATH"])
         if exists(source_filename):
             break
-        if exists(source_filename + ".xls"):
-            source_filename += ".xls"
-            break
-        if exists(source_filename + ".xlsx"):
-            source_filename += ".xlsx"
-            break
+
+        for excel_ext in VALID_EXCEL_EXTENSIONS:
+            print(source_filename + excel_ext, exists(source_filename + excel_ext))
+            if exists(source_filename + excel_ext):
+                return source_filename + excel_ext
         print("Ten plik nie istnieje, podaj poprawną ścieżkę")
-    return source_filename
+
 
 
 def add_version(filename: str) -> str:
@@ -242,29 +286,25 @@ def add_version(filename: str) -> str:
     """
     version = 1
     while True:
-        print(filename + f"_{version}.html")
         if exists(filename + f"_{version}.html"):
             version += 1
         else:
-            filename += f"_{version}"
-            break
-    return filename
+            return filename + f"_{version}"
 
 
 def create_html_file() -> str:
     while True:
-        filename = input("Podaj nazwę pliku, jaki chcesz utworzyć\n")
-        illegals_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
-        for char in illegals_chars:
+        filename = input("Podaj nazwę pliku, jaki chcesz utworzyć\n").replace(".html", "")
+
+        for char in ILLEGAL_CHARS:
             if char in filename:
-                print("Podaj poprawną nazwę - nazwa nie może zawierać tych znaków: " + ", ".join(illegals_chars))
+                print("Podaj poprawną nazwę - nazwa nie może zawierać tych znaków: " + ", ".join(ILLEGAL_CHARS))
                 break
         else:
-            filename = filename.replace(".html", "")
             break
 
     if exists(filename + ".html"):
-        print("Plik o ten nazwie już istnieje - do pliku dodana zostanie liczba oznaczająca wersję")
+        print("Plik o tej nazwie już istnieje - do pliku dodana zostanie liczba oznaczająca wersję")
         filename = add_version(filename)
 
     return filename + ".html"
@@ -273,16 +313,7 @@ def create_html_file() -> str:
 def keywords_searching_discounts() -> tuple[list[str], list[str], list[float]]:
     keywords, searching_list, discounts = [], [], []
     while True:
-        INPUT_STRING = (
-            "\nPodaj czy słowo kluczowe ma być szukane na początku nazwy produktu,"
-            " w całej nazwie, czy jako osobne słowo zawarte w nazwie\n"
-            "Lub wpisz stop żeby zakończyć dodawanie produktów\n"
-            "Początek -> Wpisz 'P'\n"
-            "Cała nazwa -> Wpisz 'C'\n"
-            "Osobne słowo -> Wpisz 'O'\n"
-            "Zakończ dodawanie produktów -> 'stop'\n")
-
-        searching = get_input_with_limited_options(INPUT_STRING, options=["c", "p", "o", "stop"]).lower()
+        searching = limited_options_input(INPUT_MESSAGES["KEYWORD_MATCH_TYPE"], options=["c", "p", "o", "stop"]).lower()
         if searching == "stop":
             break
         searching_list.append(searching)
@@ -305,13 +336,13 @@ def get_discount_input() -> float:
             print("Rabat musi być liczbą")
 
 
-def items_list(excel_file: str, keywords: list[str], discounts: list[float], searching_list: list[str]) -> list[list[str]]:
+def items_list(excel_file: str, keywords: list[str], discounts: list[float], searching: list[str]) -> list[list[str]]:
     items = []
     df = pd.read_excel(excel_file)
     columns = df.columns
     for name, amount_left, unit, price in zip(df[columns[0]], df[columns[1]], df[columns[2]], df[columns[3]]):
         amount_left = int(amount_left)
-        for keyword, way_of_searching, discount in zip(keywords, searching_list, discounts):
+        for keyword, way_of_searching, discount in zip(keywords, searching, discounts):
             keyword = keyword.lower()
             name = name.replace(",", '.')
             if add_item(way_of_searching, keyword, name):
@@ -323,61 +354,37 @@ def items_list(excel_file: str, keywords: list[str], discounts: list[float], sea
     return items
 
 
-def generate_offer_in_html(filename: str, keywords: list[str], discounts: list[str], searching_list: list[str]) -> None:
-
-    lines = items_list(filename, keywords, discounts,
-                       searching_list)
+def generate_offer_in_html(filename: str, keywords: list[str], discounts: list[float], searching: list[str]) -> None:
+    lines = items_list(filename, keywords, discounts, searching)
     filename = create_html_file()
 
-    STYLE = ("<style> * {font-size: 1.1em;}"
-             "body {background-color: rgb(155, 155, 101);}"
-             "table {margin-left: auto;margin-right: auto;border-color: black;border-spacing: 5px;}"
-             "tr {text-align: center !important;padding: 15px;}"
-             "th {padding: 15px;border: 3px solid black;margin: 10px 50px;}"
-             "td {border: 3px solid black;padding: 15px 50px;margin: 10px 50px;}"
-             "@keyframes alert {from {background-color: rgb(155, 155, 101);}to {background-color: red;}}"
-             "</style>\n")
-
-    TABLE_HEAD = """<table>
-    <thead>
-    <tr style="text-align: right;">
-    <th></th>
-    <th>Nazwa</th>
-    <th>Sprzedawane w:</th>
-    <th>Cena</th>
-    </tr>
-    </thead>
-    <tbody>\n\n"""
-
-    FILE_END = """</tbody>
-    </table>"""
-
     with open(filename, 'a+', encoding='utf-8') as f:
-        f.write(STYLE)
-        f.write(TABLE_HEAD)
+        f.write(HTML_FILE_STRUCTURE["MAIN_STYLE"])
+        f.write(HTML_FILE_STRUCTURE["TABLE_HEAD"])
         for line in generate_table_contents(lines):
             f.write(line)
-        f.write(FILE_END)
+        f.write(HTML_FILE_STRUCTURE["FILE_END"])
 
 
-def generate_table_contents(lines, counter=1) -> list[str]:
+def generate_table_contents(lines: list[list[str]], counter=1) -> list[str]:
     """
     Generates list of strings that are later written to file
     Option counter argument lets choose what is first ordinal number of new items
     """
     contents = []
     for item in lines:
+        name, selling_unit, price = item[0], item[1], item[2]
         table_row_string = ""
-        table_row_string += ("\n<tr>\n")
-        table_row_string += (f"<th>{counter}</th>\n")
-        if "CHWILOWO NIEDOSTĘPNE" in item[0]:
+        table_row_string += "\n<tr>\n"
+        table_row_string += f"<th>{counter}</th>\n"
+        if "CHWILOWO NIEDOSTĘPNE" in name:
             # adding style
             table_row_string += ('<td style=" animation-duration: 5s; animation-name:alert;'
-                                 f' animation-iteration-count: infinite;">{item[0]}</td>\n')
+                                 f' animation-iteration-count: infinite;">{name}</td>\n')
         else:
-            table_row_string += f"<td>{item[0]}</td>\n"
-        table_row_string += f"<td>{item[1]}</td>\n"
-        table_row_string += f"<td>{item[2]}</td>\n"
+            table_row_string += f"<td>{name}</td>\n"
+        table_row_string += f"<td>{selling_unit}</td>\n"
+        table_row_string += f"<td>{price}</td>\n"
         table_row_string += "</tr>\n"
         counter += 1
         contents.append(table_row_string)
@@ -386,15 +393,13 @@ def generate_table_contents(lines, counter=1) -> list[str]:
 
 def add_item(way_of_searching: str, keyword: str, name: str) -> bool:
     name = name.lower()
-    if way_of_searching == 'c':
-        if keyword in name:
-            return True
-    if way_of_searching == 'p':
-        if name.startswith(keyword):
-            return True
-    if way_of_searching == 'o':
-        if keyword in name.split(' '):
-            return True
+    if way_of_searching == 'c' and keyword in name:
+        return True
+    if way_of_searching == 'p' and name.startswith(keyword):
+        return True
+    if way_of_searching == 'o' and keyword in name.split(' '):
+        return True
+
     return False
 
 
