@@ -87,15 +87,29 @@ CHANGE_ACTIONS = {
     '3': change_discount
 }
 
+EXTRACT_AND_COMPARE = {
+    "name": lambda table_row, name: table_row.split("<td", maxsplit=1)[1]
+            .split(">", maxsplit=1)[1]
+            .split("<", maxsplit=1)[0].lower() == name.lower(),
+
+    "ordinal_num": lambda table_row, num: table_row.split("<th>")[1].split("</th")[0] == num
+}
+
+
+SET = {
+    "price": lambda table_row: table_row.rsplit("</td>", maxsplit=1)[0].rsplit(">", maxsplit=1)[1]
+    # split from right as price is at the end of table row structure
+}
+
 DELETION = {
     "1": {
         "msg": "Podaj numer pozycji jaką chcesz usunąć, wpisz 'stop' żeby przestać edytować\n",
-        "func": lambda table_row, num: table_row.split("<th>")[1].split("</th")[0] == num
+        "func": EXTRACT_AND_COMPARE["ordinal_num"]
         }
         
     "2": {
         "msg": "Podaj słowo kluczowe, wpisz 'stop' żeby przestać edytować\n",
-        "func": lambda table_row, name: table_row.split("<td", maxsplit=1)[1].split(">", maxsplit=1)[1].split("<", maxsplit=1)[0].lower() == name.lower()
+        "func": EXTRACT_AND_COMPARE["name"]
         }
 }
 
@@ -222,17 +236,15 @@ def change_discount() -> None:
     for new_item in new_items:
         new_item_price, new_item_name = new_item[2], new_item[0].split("<br/>")[0]
         for index, item in enumerate(table_contents):
-            item_name = item.split("<td", maxsplit=1)[1].split(">", maxsplit=1)[1].split("<", maxsplit=1)[0]
-            if item_name == new_item_name:
-                item_price = item.rsplit("</td>", maxsplit=1)[0].rsplit(">", maxsplit=1)[1]
-                # split from right as price is at the end of table row structure
+            if EXTRACT_AND_COMPARE["name"](item, new_item_name):
+                item_price = SET["price"](item)
                 table_contents[index] = item.replace(f"{item_price}", new_item_price)
                 break
+
     file_contents = file_start + table_contents + file_end
 
     with open(html_file, 'w', encoding='utf-8') as f:
-        for line in file_contents:
-            f.write(line)
+        f.writelines(file_contents)
 
 
 
@@ -243,8 +255,7 @@ def check_for_duplicates_and_write_to_file(new_items: list[list[str]]) -> None:
     for new_item in new_items:
         new_item_name = new_item[0].split("<br/>")[0]
         for old_item in previous_content:
-            old_item_name = old_item.split("<td", maxsplit=1)[1].split(">", maxsplit=1)[1].split("<", maxsplit=1)[0]
-            if old_item_name == new_item_name:
+            if EXTRACT_AND_COMPARE["name"](old_item, new_item_name):
                 break
         else:
             new_items_list.append(new_item)
@@ -352,8 +363,7 @@ def generate_offer_in_html(filename: str, keywords: list[str], discounts: list[f
     with open(filename, 'a+', encoding='utf-8') as f:
         f.write(HTML_FILE_STRUCTURE["MAIN_STYLE"])
         f.write(HTML_FILE_STRUCTURE["TABLE_HEAD"])
-        for line in generate_table_contents(lines):
-            f.write(line)
+        f.writelines(lines)
         f.write(HTML_FILE_STRUCTURE["FILE_END"])
 
 
