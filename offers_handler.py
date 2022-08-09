@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 # enables using built-in type annotations rather than those from Typing module - added in python 3.9
 
 from os.path import exists
@@ -75,17 +76,7 @@ PRINT_STYLES = {
     "BOLD": '\033[1m'
 }
 
-MAIN_ACTIONS = {
-    "1": create_new_offer,
-    "2": change_offer
-}
-# here actions can be added as function names
 
-CHANGE_ACTIONS = {
-    '1': delete_from_offer,
-    '2': add_to_offer,
-    '3': change_discount
-}
 
 EXTRACT_AND_COMPARE = {
     "name": lambda table_row, name: table_row.split("<td", maxsplit=1)[1]
@@ -105,7 +96,7 @@ DELETION = {
     "1": {
         "msg": "Podaj numer pozycji jaką chcesz usunąć, wpisz 'stop' żeby przestać edytować\n",
         "func": EXTRACT_AND_COMPARE["ordinal_num"]
-        }
+        },
         
     "2": {
         "msg": "Podaj słowo kluczowe, wpisz 'stop' żeby przestać edytować\n",
@@ -165,6 +156,7 @@ def get_html_source_filename() -> str:
 
 
 def warning(message: str, styles: tuple[str] = (PRINT_STYLES["BOLD"], PRINT_STYLES["WARNING"])) -> None:
+    os.system("color")
     end = '\033[0m'
     print(f'{"".join(styles)}{message}{end}')
 
@@ -180,7 +172,7 @@ def limited_options_input(input_message: str, *, options: list[str]) -> str:
             return user_input
 
 
-def ask_for_input_in_loop(message: str, stop_word = "stop": str) -> list[str]:
+def ask_for_input_in_loop(message: str, stop_word: str = "stop") -> list[str]:
     inputs = []
     while True:
         user_input = input(message).lower()
@@ -358,12 +350,13 @@ def items_list(excel_file: str, keywords: list[str], discounts: list[float], sea
 
 def generate_offer_in_html(filename: str, keywords: list[str], discounts: list[float], searching: list[str]) -> None:
     lines = items_list(filename, keywords, discounts, searching)
+    table_contents = generate_table_contents(lines)
     filename = create_html_file()
 
     with open(filename, 'a+', encoding='utf-8') as f:
         f.write(HTML_FILE_STRUCTURE["MAIN_STYLE"])
         f.write(HTML_FILE_STRUCTURE["TABLE_HEAD"])
-        f.writelines(lines)
+        f.writelines(table_contents)
         f.write(HTML_FILE_STRUCTURE["FILE_END"])
 
 
@@ -380,12 +373,25 @@ def generate_table_contents(lines: list[list[str]], counter=1) -> list[str]:
         table_row = ("\n<tr>\n"
                     f"<th>{counter}</th>\n"
                     f'{style}'
-                    f"<td>{selling_unit}</td>\n")
+                    f"<td>{selling_unit}</td>\n"
                     f"<td>{price}</td>\n"
-                    "</tr>\n"
+                    "</tr>\n")
         counter += 1
         contents.append(table_row)
     return contents
+
+
+MAIN_ACTIONS = {
+    "1": create_new_offer,
+    "2": change_offer
+}
+# here actions can be added as function names
+
+CHANGE_ACTIONS = {
+    '1': delete_from_offer,
+    '2': add_to_offer,
+    '3': change_discount
+}
 
 
 
