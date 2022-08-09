@@ -5,6 +5,9 @@ from os.path import exists
 import itertools
 import pandas as pd
 
+VALID_EXCEL_EXTENSIONS = [".xls", ".xlsx"]
+ILLEGAL_CHARS = ['<', '>', ':', '"', '/', '\\', '|', '?', '*', '.']
+
 INPUT_MESSAGES = {
     "START": ("Wpisz '1' jeśli chcesz stworzyć nową ofertę\n"
               "Wpisz '2' jeśli chcesz zmodyfikować istniejącą ofertę\n"),
@@ -52,15 +55,25 @@ HTML_FILE_STRUCTURE = {
                    "<th>Cena</th>\n"
                    "</tr>\n"
                    "</thead>\n"
-                   "<tbody>\n\n"),
+                   "<tbody>\n"),
 
     "FILE_END": ("</tbody>\n"
                  "</table>")
 }
 
-VALID_EXCEL_EXTENSIONS = [".xls", ".xlsx"]
-ILLEGAL_CHARS = ['<', '>', ':', '"', '/', '\\', '|', '?', '*', '.']
+WARNINGS = {
+    "FILE_NOT_FOUND": "Ten plik nie istnieje, podaj poprawną ścieżkę lub nazwę pliku",
+    "ILLEGAL_FILENAME": f'Podaj poprawną nazwę - nazwa nie może zawierać tych znaków: {", ".join(ILLEGAL_CHARS)}',
+    "THIS_FILE_EXISTS": "Plik o tej nazwie już istnieje - do pliku dodana zostanie liczba oznaczająca wersję",
+    "DISCOUNT_RANGE": "Rabat musi wynosić między 0 a 100",
+    "MUST_BE_NUM": "Rabat musi być liczbą"
+}
 
+# ANSI escape sequences
+PRINT_STYLES = {
+    "WARNING": '\033[93m',
+    "BOLD": '\033[1m'
+}
 
 
 def start() -> None:
@@ -85,7 +98,7 @@ def create_new_offer() -> None:
 def read_from_html_file(filename: str) -> tuple[list[str], list[str], list[str]]:
     with open(filename, 'r', encoding='utf-8') as f:
         lines = f.readlines()
-        file_start = list(itertools.takewhile(lambda x: "<tbody>" not in x, lines)) + ["<tbody>"]
+        file_start = list(itertools.takewhile(lambda x: "<tbody>" not in x, lines)) + ["<tbody>\n"]
         # returns lines before <tbody> (exclusive)
         file_end = list(itertools.dropwhile(lambda x: "</tbody>" not in x, lines))
         # returns lines after </tbody> (inclusive)
@@ -103,13 +116,21 @@ def get_html_source_filename() -> str:
         if exists(filename + ".html"):
             filename += ".html"
             break
-        print("Ten plik nie istnieje, podaj poprawną ścieżkę lub nazwę pliku")
+        warning(WARNINGS["FILE_NOT_FOUND"])
 
     return filename
 
 
+def warning(message: str, styles: tuple[str] = (PRINT_STYLES["BOLD"], PRINT_STYLES["WARNING"])) -> None:
+    end = '\033[0m'
+    print(f'{"".join(styles)}{message}{end}')
+
+
 def limited_options_input(input_message: str, *, options: list[str]) -> str:
     # using star operator so that options argument is a keyword argument
+    """
+    Function to make sure the user's input can be accounted for
+    """
     while True:
         user_input = input(input_message).lower()
         if user_input in [option.lower() for option in options]:
@@ -130,9 +151,10 @@ def delete_items_by_ordinal_number(content: list[str]) -> list[str]:
         ordinal_numbers_list.append(ordinal_number)
 
     for line in content:
+        line_number = line.split("<th>")[1].split("</th")[0]
         to_be_removed = False
         for num in ordinal_numbers_list:
-            if num in line.replace(f"<th>{num}</th>", ""):
+            if num == line_number:
                 ordinal_numbers_list.remove(num)
                 deleted_items_counter += 1
                 to_be_removed = True
@@ -215,13 +237,13 @@ def change_discount() -> None:
     new_items = items_list(excel_file, keywords, discounts, searching_list)
 
     for new_item in new_items:
-        new_item_name = new_item[0].split("<br/>")[0]
+        new_item_price, new_item_name = new_item[2], new_item[0].split("<br/>")[0]
         for index, item in enumerate(table_contents):
             item_name = item.split("<td", maxsplit=1)[1].split(">", maxsplit=1)[1].split("<", maxsplit=1)[0]
             if item_name == new_item_name:
                 item_price = item.rsplit("</td>", maxsplit=1)[0].rsplit(">", maxsplit=1)[1]
                 # split from right as price is at the end of table row structure
-                table_contents[index] = item.replace(f"{item_price}", new_item[2])
+                table_contents[index] = item.replace(f"{item_price}", new_item_price)
                 break
 
     with open(html_file, 'w', encoding='utf-8') as f:
@@ -273,11 +295,10 @@ def get_excel_source_filename() -> str:
             break
 
         for excel_ext in VALID_EXCEL_EXTENSIONS:
-            print(source_filename + excel_ext, exists(source_filename + excel_ext))
             if exists(source_filename + excel_ext):
                 return source_filename + excel_ext
-        print("Ten plik nie istnieje, podaj poprawną ścieżkę")
 
+        warning(WARNINGS["FILE_NOT_FOUND"])
 
 
 def add_version(filename: str) -> str:
@@ -298,13 +319,13 @@ def create_html_file() -> str:
 
         for char in ILLEGAL_CHARS:
             if char in filename:
-                print("Podaj poprawną nazwę - nazwa nie może zawierać tych znaków: " + ", ".join(ILLEGAL_CHARS))
+                warning(WARNINGS["ILLEGAL_FILENAME"])
                 break
         else:
             break
 
     if exists(filename + ".html"):
-        print("Plik o tej nazwie już istnieje - do pliku dodana zostanie liczba oznaczająca wersję")
+        warning(WARNINGS["THIS_FILE_EXISTS"])
         filename = add_version(filename)
 
     return filename + ".html"
@@ -331,9 +352,9 @@ def get_discount_input() -> float:
             discount = float(input("Podaj rabat (od 0 do 100)\n"))
             if 0 <= discount <= 100:
                 return 1 - (discount / 100)
-            print("Rabat musi wynosić między 0 a 100")
+            warning(WARNINGS["DISCOUNT_RANGE"])
         except ValueError:
-            print("Rabat musi być liczbą")
+            warning(WARNINGS["MUST_BE_NUM"])
 
 
 def items_list(excel_file: str, keywords: list[str], discounts: list[float], searching: list[str]) -> list[list[str]]:
