@@ -14,7 +14,7 @@ Functionalities:
     User inputs the excel file from which data is pulled.
     Then for each category of products that user wants to add:
         User chooses:
-        - The way of looking for products in excel file, by matching a phrase, options:
+        - The way of looking for products in excel file, by matching a phrase, options:</br>
             - matching in the whole products name
             - matching in the beginning of products name
             - matching for individual words in products name
