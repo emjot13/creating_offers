@@ -152,14 +152,12 @@ def delete_items_by_ordinal_number(content: list[str]) -> list[str]:
 
     for line in content:
         line_number = line.split("<th>")[1].split("</th")[0]
-        to_be_removed = False
         for num in ordinal_numbers_list:
             if num == line_number:
                 ordinal_numbers_list.remove(num)
                 deleted_items_counter += 1
-                to_be_removed = True
                 break
-        if not to_be_removed:
+        else:        
             line = line.replace(f"<th>{lines_counter + deleted_items_counter}</th>", f"<th>{lines_counter}</th>")
             # this makes so that the correct order of ordinal numbers is preserved
             lines_counter += 1
@@ -179,16 +177,13 @@ def delete_items_by_part_of_name(content: list[str], edit_type: str) -> list[str
 
     for line in content:
         item_name = line.split("<td", maxsplit=1)[1].split(">", maxsplit=1)[1].split("<", maxsplit=1)[0].lower()
-        to_be_removed = False
         for keyword in keywords:
             edit_type_2_condition = item_name.startswith(keyword) and edit_type == "2"
             edit_type_3_condition = keyword in item_name and edit_type == "3"
             if edit_type_2_condition or edit_type_3_condition:
-                to_be_removed = True
                 deleted_items_counter += 1
                 break
-
-        if not to_be_removed:
+        else:
             line = line.replace(f"<th>{lines_counter + deleted_items_counter}</th>", f"<th>{lines_counter}</th>")
             # this makes so that the correct order of ordinal numbers is preserved
             lines_counter += 1
