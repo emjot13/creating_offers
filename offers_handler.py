@@ -390,20 +390,16 @@ def generate_table_contents(lines: list[list[str]], counter=1) -> list[str]:
     contents = []
     for item in lines:
         name, selling_unit, price = item[0], item[1], item[2]
-        table_row_string = ""
-        table_row_string += "\n<tr>\n"
-        table_row_string += f"<th>{counter}</th>\n"
-        if "CHWILOWO NIEDOSTĘPNE" in name:
-            # adding style
-            table_row_string += ('<td style=" animation-duration: 5s; animation-name:alert;'
-                                 f' animation-iteration-count: infinite;">{name}</td>\n')
-        else:
-            table_row_string += f"<td>{name}</td>\n"
-        table_row_string += f"<td>{selling_unit}</td>\n"
-        table_row_string += f"<td>{price}</td>\n"
-        table_row_string += "</tr>\n"
+        style = ('<td style=" animation-duration: 5s; animation-name:alert;'
+                 f' animation-iteration-count: infinite;">{name}</td>\n') if "CHWILOWO NIEDOSTĘPNE" in name else f"<td>{name}</td>\n"
+        table_row = ("\n<tr>\n"
+                    f"<th>{counter}</th>\n"
+                    f'{style}'
+                    f"<td>{selling_unit}</td>\n")
+                    f"<td>{price}</td>\n"
+                    "</tr>\n"
         counter += 1
-        contents.append(table_row_string)
+        contents.append(table_row)
     return contents
 
 
